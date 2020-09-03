@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "624786614529",
+    "firebase_url": "https://androidapp-e28be.firebaseio.com",
+    "project_id": "androidapp-e28be",
+    "storage_bucket": "androidapp-e28be.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:624786614529:android:39be8b1c0163cc54b85300",
+        "android_client_info": {
+          "package_name": "com.example.tensoltest"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "624786614529-cosublbt2c5m5q2nu42to4rsfiovr66e.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBlRCk9SX5A3SITJz5g-76EGIcCYJm-HBA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "624786614529-cosublbt2c5m5q2nu42to4rsfiovr66e.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
