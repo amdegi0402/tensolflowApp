@@ -1,137 +1,136 @@
-/*
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'home.dart';
 
-List<CameraDescription> cameras;
+// グローバル変数は最小限に抑え、定数として定義
+const String testBannerId = 'ca-app-pub-3940256099942544/6300978111';  // テスト用広告ID
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized(); //理由はわからないがこれを入れないとエラーになる
-
-  cameras = await availableCameras();
-  runApp(MyApp());
+/// プラットフォームに応じた広告ユニットIDを取得
+String getAdUnitId() {
+  if (Platform.isIOS) {
+    return testBannerId;  // 本番環境では実際のiOS用広告IDに置き換え
+  } else if (Platform.isAndroid) {
+    return 'ca-app-pub-6617363713596381/2880950371';
+  }
+  throw UnsupportedError('Unsupported platform');
 }
 
-class MyApp extends StatefulWidget {
+future<void> main() async {
+  // Flutterバインディングの初期化
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Firebase初期化
+  await Firebase.initializeApp();
+
+  // モバイル広告SDKの初期化
+  await MobileAds.instance.initialize();
+
+  // 利用可能なカメラの取得
+  List<CameraDescription> cameras;
+  try {
+    cameras = await availableCameras();
+  } on CameraException catch (e) {
+    debugPrint('カメラの初期化エラー: ${e.code}\nエラーメッセージ: ${e.message}');
+    return;
+  }
+
+  runApp(MyApp(cameras: cameras));
+}
+
+class MyApp extends StatelessWidget {
+  final List<CameraDescription> cameras;
+
+  const MyApp({super.key, required this.cameras});
+
   @override
-  _CameraAppState createState() => _CameraAppState();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: '画像認識アプリ',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.blue,
+          brightness: Brightness.dark,
+        ),
+      ),
+      home: MyHomePage(cameras: cameras),
+    );
+  }
 }
 
-class _CameraAppState extends State<MyApp> {
-  CameraController controller;
+class MyHomePage extends StatefulWidget {
+  final List<CameraDescription> cameras;
+
+  const MyHomePage({super.key, required this.cameras});
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+  BannerAd? _bannerAd;
+  bool _isAdLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    controller = CameraController(cameras[0], ResolutionPreset.medium);
-    controller.initialize().then((_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() {});
-    });
+    _loadAd();
+  }
+
+  void _loadAd() {
+    _bannerAd = BannerAd(
+      adUnitId: getAdUnitId(),
+      size: AdSize.banner,
+      request: const AdRequest(),
+      listener: BannerAdListener(
+        onAdLoaded: (ad) {
+          setState(() {
+            _isAdLoaded = true;
+          });
+        },
+        onAdFailedToLoad: (ad, error) {
+          debugPrint('広告の読み込みに失敗: ${error.message}');
+          ad.dispose();
+        },
+      ),
+    );
+
+    _bannerAd?.load();
   }
 
   @override
   void dispose() {
-    controller?.dispose();
+    _bannerAd?.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-   if (controller == null || !controller.value.isInitialized) {
-      return const Text(
-        'Tap a camera',
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 24.0,
-          fontWeight: FontWeight.w900,
-        ),
-      );
-    } else {
-      return AspectRatio(
-        aspectRatio: controller.value.aspectRatio,
-        child: CameraPreview(controller),
-      );
-    }
-  }
-}
-*/
-
-import 'dart:async';
-import 'dart:io';
-import 'package:flutter/material.dart';
-import 'package:camera/camera.dart';
-import 'home.dart';
-import 'package:firebase_admob/firebase_admob.dart';
-//import 'package:flutter/services.dart'; // 追加
-//import 'package:admob_flutter/admob_flutter.dart';
-
-
-
-String admob01 = BannerAd.testAdUnitId; //テスト用。本当はここに広告ユニットIDを設定
-List<CameraDescription> cameras;
-
-String getAppId() {
-  if (Platform.isIOS) {
-    return admob01;
-  } else if (Platform.isAndroid) {
-    return 'ca-app-pub-6617363713596381/2880950371';
-  }
-  return null;
-}
-
-
-Future<Null> main() async{
-  WidgetsFlutterBinding.ensureInitialized(); //理由はわからないがこれを入れないとエラーになる
-
-  try{
-    cameras = await availableCameras(); //使用可能なカメラリスト取得
-  } on CameraException catch (e){
-    print('Error: $e.code\n Error Message: $e.message');
-  }
-  //Admob.initialize(getAppId());
-  runApp( MyApp());
-}
-
-class MyApp extends StatelessWidget{
-  
-   //admob広告表示のための初期設定
-  static MobileAdTargetingInfo targetingInfo = MobileAdTargetingInfo(
-    keywords: <String>[
-      '登山',
-      'キャンプ',
-      'ハイキング'
-    ],
-    contentUrl: 'http://自分のHPサイトURL',
-    childDirected: false,
-    testDevices: <String>[], 
-  );
-  BannerAd myBanner = BannerAd(
-    adUnitId: admob01, //バナー広告のユニットID
-    size: AdSize.smartBanner,
-    targetingInfo: targetingInfo,
-    listener: (MobileAdEvent event) {
-      print("BannerAd event is $event");
-    },
-  );
-  @override
-  Widget build(BuildContext context){
-    //admobのバナー広告表示
-    myBanner
-      ..load()
-      ..show(
-        anchorOffset: 0.0,
-        anchorType: AnchorType.bottom,
-      );
-  
-    return MaterialApp(
-      title: 'カメラを対象に合わせてください',
-      theme: ThemeData(
-        brightness: Brightness.dark,
+    return Scaffold(
+      body: Stack(
+        children: [
+          // メインコンテンツ
+          HomePage(widget.cameras),
+          
+          // 広告表示
+          if (_isAdLoaded)
+            Positioned(
+              bottom: 0,
+              left: 0,
+              right: 0,
+              child: Container(
+                alignment: Alignment.center,
+                width: _bannerAd!.size.width.toDouble(),
+                height: _bannerAd!.size.height.toDouble(),
+                child: AdWidget(ad: _bannerAd!),
+              ),
+            ),
+        ],
       ),
-      home: HomePage(cameras),
-    ); 
+    );
   }
 }
